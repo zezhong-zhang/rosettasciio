@@ -99,6 +99,7 @@ class FeiEMDReader(object):
         SI_dtype=None,
         load_SI_image_stack=False,
         lazy=False,
+        sparse=True,
     ):
         # TODO: Finish lazy implementation using the `FrameLocationTable`
         # Parallelise streams reading
@@ -113,6 +114,7 @@ class FeiEMDReader(object):
         self.SI_data_dtype = SI_dtype
         self.load_SI_image_stack = load_SI_image_stack
         self.lazy = lazy
+        self.sparse = sparse
         self.detector_name = None
         self.original_metadata = {}
         # UUID: label mapping
@@ -927,7 +929,7 @@ class FeiSpectrumStream(object):
             "Number_of_channels": self.bin_count,
         }
         # Convert stream to spectrum image
-        if self.reader.lazy:
+        if self.reader.lazy or self.reader.sparse:
             self.spectrum_image = self.stream_to_sparse_array(stream_data=stream_data)
         else:
             self.spectrum_image = self.stream_to_array(stream_data=stream_data)
@@ -961,6 +963,8 @@ class FeiSpectrumStream(object):
             channels=self.bin_count,
             sum_frames=self.reader.sum_frames,
             rebin_energy=self.reader.rebin_energy,
+            lazy=self.reader.lazy,
+            is_sparse=self.reader.sparse,
         )
         return sparse_array
 

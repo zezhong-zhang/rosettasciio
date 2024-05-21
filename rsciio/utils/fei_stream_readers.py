@@ -222,6 +222,8 @@ def stream_to_sparse_COO_array(
     rebin_energy=1,
     sum_frames=True,
     first_frame=0,
+    lazy=True,
+    is_sparse=False,
 ):
     """Returns data stored in a FEI stream as a nd COO array
 
@@ -256,9 +258,19 @@ def stream_to_sparse_COO_array(
             first_frame=first_frame,
             last_frame=last_frame,
         )
-    dense_sparse = DenseSliceCOO(coords=coords, data=data, shape=shape)
-    dask_sparse = da.from_array(dense_sparse, chunks="auto")
-    return dask_sparse
+    if is_sparse:
+        sparse_array = sparse.COO(coords=coords, data=data, shape=shape)
+        return sparse_array
+    else:
+        dense_sparse = DenseSliceCOO(coords=coords, data=data, shape=shape)
+    if lazy:
+        dask_sparse = da.from_array(dense_sparse, chunks="auto")
+        return dask_sparse
+    else:
+        return dense_sparse
+    # else:
+    #     sparse_array = sparse.COO(coords=coords, data=data, shape=shape)
+    #     return sparse_array
 
 
 @jit_ifnumba(cache=True)
