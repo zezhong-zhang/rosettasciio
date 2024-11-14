@@ -105,6 +105,7 @@ def is_EMD_Velox(file):
 def file_reader(
     filename,
     lazy=False,
+    sparse=True,
     dataset_path=None,
     stack_group=None,
     select_type=None,
@@ -177,6 +178,7 @@ def file_reader(
             _logger.debug("EMD file is a Velox variant.")
             emd_reader = FeiEMDReader(
                 lazy=lazy,
+                sparse=sparse,
                 select_type=select_type,
                 first_frame=first_frame,
                 last_frame=last_frame,
