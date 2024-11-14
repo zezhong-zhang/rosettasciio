@@ -93,6 +93,7 @@ def file_writer(filename, signal, export_scale=True, extratags=None, **kwds):
     """
 
     data = signal["data"]
+    metadata = signal.get("metadata", {})
     photometric = "MINISBLACK"
     # HyperSpy uses struct arrays to store RGBA data
     from rsciio.utils import rgb_tools
@@ -110,7 +111,7 @@ def file_writer(filename, signal, export_scale=True, extratags=None, **kwds):
             "Description and export scale cannot be used at the same time, "
             "because it is incompability with the 'ImageJ' tiff format"
         )
-    if export_scale:
+    if export_scale and "axes" in signal.keys():
         kwds.update(_get_tags_dict(signal, extratags=extratags))
         _logger.debug(f"kwargs passed to tifffile.py imsave: {kwds}")
 
@@ -121,7 +122,7 @@ def file_writer(filename, signal, export_scale=True, extratags=None, **kwds):
             # (https://github.com/cgohlke/tifffile/issues/21)
             kwds["metadata"] = None
 
-    if signal["metadata"]["General"].get("date"):
+    if "General" in metadata.keys() and metadata["General"].get("date"):
         dt = get_date_time_from_metadata(signal["metadata"], formatting="datetime")
         kwds["datetime"] = dt
 
@@ -154,7 +155,7 @@ def file_reader(
         Force read image resolution using the ``x_resolution``, ``y_resolution``
         and ``resolution_unit`` tiff tags. Beware: most software don't (properly)
         use these tags when saving ``.tiff`` files.
-        See `<https://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html>`_.
+        See `<https://www.loc.gov/preservation/digital/formats/content/tiff_tags.shtml>`_.
     multipage_as_list : bool, default=False
         Read multipage tiff and return list with full content of every page. This
         utilises ``tifffile``s ``pages`` instead of ``series`` way of data access,
@@ -190,23 +191,28 @@ def file_reader(
     >>> # Load a non-uniform axis from a hamamatsu streak file:
     >>> s = file_reader('file.tif', hamamatsu_streak_axis_type='data')
     """
-    with TiffFile(filename, **kwds) as tiff:
-        if multipage_as_list:
-            handles = tiff.pages  # use full access with pages interface
-        else:
-            handles = tiff.series  # use fast access with series interface
-        dict_list = [
-            _read_tiff(
-                tiff,
-                handle,
-                filename,
-                force_read_resolution,
-                lazy=lazy,
-                hamamatsu_streak_axis_type=hamamatsu_streak_axis_type,
-                **kwds,
-            )
-            for handle in handles
-        ]
+    # We can't use context manager, because it closes the file on exit
+    # and the file needs to stay open when loading lazily
+    # close the file manually
+    tiff = TiffFile(filename, **kwds)
+    if multipage_as_list:
+        handles = tiff.pages  # use full access with pages interface
+    else:
+        handles = tiff.series  # use fast access with series interface
+    dict_list = [
+        _read_tiff(
+            tiff,
+            handle,
+            filename,
+            force_read_resolution,
+            lazy=lazy,
+            hamamatsu_streak_axis_type=hamamatsu_streak_axis_type,
+            **kwds,
+        )
+        for handle in handles
+    ]
+    if not lazy:
+        tiff.close()
 
     return dict_list
 

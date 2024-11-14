@@ -39,6 +39,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinxcontrib.towncrier",
+    "sphinx_copybutton",
 ]
 
 intersphinx_mapping = {
@@ -108,7 +109,7 @@ nitpick_ignore_regex = [(r"py:.*", r"hyperspy.api.*")]
 # -- Options for numpydoc extension -----------------------------------
 
 numpydoc_xref_param_type = True
-numpydoc_xref_ignore = {"type", "optional", "default", "of"}
+numpydoc_xref_ignore = {"type", "optional", "default", "of", "File", "handle"}
 
 if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
     numpydoc_validation_checks = {"all", "ES01", "EX01", "GL02", "GL03", "SA01", "SS06"}
@@ -119,6 +120,18 @@ if Version(numpydoc.__version__) >= Version("1.6.0rc0"):
 towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = False
 towncrier_draft_working_directory = ".."
+
+# -- Options for CopyButton extension -----------------------------------
+
+# CopyButton configuration
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
+copybutton_line_continuation_character = "\\"
+
+
+linkcheck_ignore = [
+    "https://www.biorxiv.org",  # 403 Client Error: Forbidden for url
+]
 
 
 def setup(app):
