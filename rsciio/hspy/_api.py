@@ -20,6 +20,7 @@ import logging
 from pathlib import Path
 
 import dask.array as da
+import sparse
 import h5py
 from dask.diagnostics import ProgressBar
 from packaging.version import Version
@@ -100,6 +101,13 @@ class HyperspyWriter(HierarchicalWriter):
                 # for performance reason, we write the data later, with all data
                 # at the same time in a single `da.store` call
             # "write_direct" doesn't play well with empty array
+            # check if data is sparse array
+            elif isinstance(data_, sparse.COO):
+                data_ = data_.todense()
+                if data_.flags.c_contiguous and data_.shape != (0,):
+                    dset_.write_direct(data_)
+                else:
+                    dset_[:] = data_
             elif data_.flags.c_contiguous and data_.shape != (0,):
                 dset_.write_direct(data_)
             else:
